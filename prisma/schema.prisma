@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  motos         Moto[]    // Relación con las motos del usuario
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token          String? @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Moto {
+  id          String   @id @default(uuid())
+  marca       String
+  modelo      String
+  year        Int
+  descripcion String
+  
+  // Características del motor
+  motorCilindrada    Int?     // en cc
+  motorTipo          String?  // 2T, 4T, eléctrico, etc.
+  motorPotencia      Int?     // en HP
+  motorTorque        Float?   // en Nm
+  motorCombustible   String?  // gasolina, diesel, eléctrico
+  
+  // Características de velocidad
+  velocidadMaxima    Int?     // en km/h
+  aceleracion0a100   Float?   // en segundos
+  velocidadCrucero   Int?     // en km/h
+  
+  // Características físicas
+  peso              Float?   // en kg
+  alturaAsiento     Int?     // en mm
+  capacidadTanque   Float?   // en litros
+  autonomia         Int?     // en km
+  
+  // Colores disponibles (JSON array)
+  colores           Json?    // ["rojo", "azul", "negro"]
+  
+  // Características adicionales
+  transmision       String?  // manual, automática, CVT
+  frenosDelanteros  String?  // disco, tambor
+  frenosTraseros    String?  // disco, tambor
+  suspension        String?  // telescópica, monoshock, etc.
+  neumaticos        String?  // medidas y tipo
+  
+  // Precio y estado
+  precio            Float?
+  estado            String?  // nuevo, usado, seminuevo
+  kilometraje       Int?     // en km
+  imagen            String?  // URL de la imagen
+  
+  // Relación con el usuario que la publica
+  userId            String?
+  user              User?    @relation(fields: [userId], references: [id])
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
